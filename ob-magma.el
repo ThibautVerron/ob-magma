@@ -1,4 +1,4 @@
-;;; ob-template.el --- org-babel functions for template evaluation
+;;; ob-magma.el --- org-babel functions for magma evaluation
 
 ;; Copyright (C) your name here
 
@@ -58,23 +58,23 @@
 ;; possibly require modes required for your language
 
 ;; optionally define a file extension for this language
-(add-to-list 'org-babel-tangle-lang-exts '("template" . "tmp"))
+(add-to-list 'org-babel-tangle-lang-exts '("magma" . "m"))
 
 ;; optionally declare default header arguments for this language
-(defvar org-babel-default-header-args:template '())
+(defvar org-babel-default-header-args:magma '())
 
 ;; This function expands the body of a source code block by doing
 ;; things like prepending argument definitions to the body, it should
-;; be called by the `org-babel-execute:template' function below.
-(defun org-babel-expand-body:template (body params &optional processed-params)
+;; be called by the `org-babel-execute:magma' function below.
+(defun org-babel-expand-body:magma (body params &optional processed-params)
   "Expand BODY according to PARAMS, return the expanded body."
-  (require 'inf-template)
+  (require 'inf-magma)
   (let ((vars (nth 1 (or processed-params (org-babel-process-params params)))))
     (concat
      (mapconcat ;; define any variables
       (lambda (pair)
         (format "%s=%S"
-                (car pair) (org-babel-template-var-to-template (cdr pair))))
+                (car pair) (org-babel-magma-var-to-magma (cdr pair))))
       vars "\n") "\n" body "\n")))
 
 ;; This is the main function which is called to evaluate a code
@@ -96,20 +96,20 @@
 ;; "session" evaluation).  Also you are free to define any new header
 ;; arguments which you feel may be useful -- all header arguments
 ;; specified by the user will be available in the PARAMS variable.
-(defun org-babel-execute:template (body params)
-  "Execute a block of Template code with org-babel.
+(defun org-babel-execute:magma (body params)
+  "Execute a block of Magma code with org-babel.
 This function is called by `org-babel-execute-src-block'"
-  (message "executing Template source code block")
+  (message "executing Magma source code block")
   (let* ((processed-params (org-babel-process-params params))
          ;; set the session if the session variable is non-nil
-         (session (org-babel-template-initiate-session (first processed-params)))
+         (session (org-babel-magma-initiate-session (first processed-params)))
          ;; variables assigned for use in the block
          (vars (second processed-params))
          (result-params (third processed-params))
          ;; either OUTPUT or VALUE which should behave as described above
          (result-type (fourth processed-params))
-         ;; expand the body with `org-babel-expand-body:template'
-         (full-body (org-babel-expand-body:template
+         ;; expand the body with `org-babel-expand-body:magma'
+         (full-body (org-babel-expand-body:magma
                      body params processed-params)))
     ;; actually execute the source-code block either in a session or
     ;; possibly by dropping it to a temporary file and evaluating the
@@ -129,25 +129,25 @@ This function is called by `org-babel-execute-src-block'"
 
 ;; This function should be used to assign any variables in params in
 ;; the context of the session environment.
-(defun org-babel-prep-session:template (session params)
+(defun org-babel-prep-session:magma (session params)
   "Prepare SESSION according to the header arguments specified in PARAMS."
   )
 
-(defun org-babel-template-var-to-template (var)
-  "Convert an elisp var into a string of template source code
+(defun org-babel-magma-var-to-magma (var)
+  "Convert an elisp var into a string of magma source code
 specifying a var of the same value."
   (format "%S" var))
 
-(defun org-babel-template-table-or-string (results)
+(defun org-babel-magma-table-or-string (results)
   "If the results look like a table, then convert them into an
 Emacs-lisp table, otherwise return the results as a string."
   )
 
-(defun org-babel-template-initiate-session (&optional session)
+(defun org-babel-magma-initiate-session (&optional session)
   "If there is not a current inferior-process-buffer in SESSION then create.
 Return the initialized session."
   (unless (string= session "none")
     ))
 
-(provide 'ob-template)
-;;; ob-template.el ends here
+(provide 'ob-magma)
+;;; ob-magma.el ends here
