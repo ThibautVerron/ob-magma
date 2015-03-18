@@ -1,8 +1,8 @@
 ;;; ob-magma.el --- org-babel functions for magma evaluation
 
-;; Copyright (C) your name here
+;; Copyright (C) 2015 Thibaut Verron (thibaut.verron@gmail.com)
 
-;; Author: your name here
+;; Author: Thibaut Verron
 ;; Keywords: literate programming, reproducible research
 ;; Homepage: http://orgmode.org
 ;; Version: 0.01
@@ -55,7 +55,11 @@
 (require 'ob-ref)
 (require 'ob-comint)
 (require 'ob-eval)
+(require 's)
+
 ;; possibly require modes required for your language
+(require 'magma-mode)
+
 
 ;; optionally define a file extension for this language
 (add-to-list 'org-babel-tangle-lang-exts '("magma" . "m"))
@@ -63,19 +67,24 @@
 ;; optionally declare default header arguments for this language
 (defvar org-babel-default-header-args:magma '())
 
+(defvar org-babel-magma-eoe "end-of-echo")
+
 ;; This function expands the body of a source code block by doing
 ;; things like prepending argument definitions to the body, it should
 ;; be called by the `org-babel-execute:magma' function below.
-(defun org-babel-expand-body:magma (body params &optional processed-params)
+(defun org-babel-expand-body:magma (body params )
   "Expand BODY according to PARAMS, return the expanded body."
-  (require 'inf-magma)
-  (let ((vars (nth 1 (or processed-params (org-babel-process-params params)))))
+  (let ((vars (mapcar #'cdr (org-babel-get-header params :var))))
     (concat
      (mapconcat ;; define any variables
       (lambda (pair)
-        (format "%s=%S"
+        (format "%s := %S;"
                 (car pair) (org-babel-magma-var-to-magma (cdr pair))))
-      vars "\n") "\n" body "\n")))
+      vars "\n")
+     "\n" body
+     "\n"
+     (format "print \"%s\";" org-babel-magma-eoe)
+     )))
 
 ;; This is the main function which is called to evaluate a code
 ;; block.
@@ -102,15 +111,22 @@ This function is called by `org-babel-execute-src-block'"
   (message "executing Magma source code block")
   (let* ((processed-params (org-babel-process-params params))
          ;; set the session if the session variable is non-nil
-         (session (org-babel-magma-initiate-session (first processed-params)))
+         (session (org-babel-magma-initiate-session (cdr (assoc :session params))))
          ;; variables assigned for use in the block
-         (vars (second processed-params))
-         (result-params (third processed-params))
+         ;(vars (cdr (assoc :vars params)))
+         (result-params (cdr (assoc :result-params params)))
          ;; either OUTPUT or VALUE which should behave as described above
-         (result-type (fourth processed-params))
+         (result-type (cdr (assoc :result-type params)))
          ;; expand the body with `org-babel-expand-body:magma'
          (full-body (org-babel-expand-body:magma
-                     body params processed-params)))
+                     body params ))
+         (results
+          (nth 0 (org-babel-comint-with-output
+              (session org-babel-magma-eoe t full-body)
+            (funcall #'insert full-body)
+            (funcall #'comint-send-input)
+            ;(funcall #'insert org-babel-magma-eoe)
+            ))))
     ;; actually execute the source-code block either in a session or
     ;; possibly by dropping it to a temporary file and evaluating the
     ;; file.
@@ -125,6 +141,13 @@ This function is called by `org-babel-execute-src-block'"
     ;; other language, please preprocess any file names involved with
     ;; the function `org-babel-process-file-name'. (See the way that
     ;; function is used in the language files)
+    (s-join "\n" (butlast (split-string results "\n") 2))
+    ;; (org-babel-reassemble-table
+    ;;  results
+    ;;  (org-babel-pick-name (cdr (assoc :colname-names params))
+    ;;     		  (cdr (assoc :colnames params)))
+    ;;  (org-babel-pick-name (cdr (assoc :rowname-names params))
+    ;;     		  (cdr (assoc :rownames params))))
     ))
 
 ;; This function should be used to assign any variables in params in
@@ -136,18 +159,21 @@ This function is called by `org-babel-execute-src-block'"
 (defun org-babel-magma-var-to-magma (var)
   "Convert an elisp var into a string of magma source code
 specifying a var of the same value."
-  (format "%S" var))
+  var
+  ;(format "%s" var)
+  )
 
 (defun org-babel-magma-table-or-string (results)
   "If the results look like a table, then convert them into an
 Emacs-lisp table, otherwise return the results as a string."
+  (org-babel-script-escape results)
   )
 
 (defun org-babel-magma-initiate-session (&optional session)
   "If there is not a current inferior-process-buffer in SESSION then create.
 Return the initialized session."
-  (unless (string= session "none")
-    ))
+  (let ((magma-interactive-use-comint t))
+    (magma-comint-run "org")))
 
 (provide 'ob-magma)
 ;;; ob-magma.el ends here
