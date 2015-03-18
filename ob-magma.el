@@ -69,19 +69,47 @@
 
 (defvar org-babel-magma-eoe "end-of-echo")
 
+(defun org-babel-magma-wrap-in-eval (body)
+  "Wraps BODY in an eval form (escapes what needs to be)"
+  (concat
+   "eval \""
+   (s-replace "\"" "\\\"" body)
+   "\";"
+   ))
+
+(defconst org-babel-magma--scan-output
+  "function scanOutput (str)
+    try 
+        res := eval str;
+        if Type(res) eq SeqEnum then
+            return \"table\";
+        else
+            return \"string\";
+        end if;
+    catch e 
+        res := \"output\";
+    end try;
+    return res;
+end function;"
+  )
+
 ;; This function expands the body of a source code block by doing
 ;; things like prepending argument definitions to the body, it should
 ;; be called by the `org-babel-execute:magma' function below.
 (defun org-babel-expand-body:magma (body params )
   "Expand BODY according to PARAMS, return the expanded body."
-  (let ((vars (mapcar #'cdr (org-babel-get-header params :var))))
+  (let ((vars (mapcar #'cdr (org-babel-get-header params :var)))
+        (eval (cdr (assoc :eval params))))
     (concat
      (mapconcat ;; define any variables
       (lambda (pair)
         (format "%s := %S;"
                 (car pair) (org-babel-magma-var-to-magma (cdr pair))))
       vars "\n")
-     "\n" body
+     "\n"
+     (if eval
+         (org-babel-magma-wrap-in-eval body)
+       body)
      "\n"
      (format "print \"%s\";" org-babel-magma-eoe)
      )))
@@ -126,7 +154,9 @@ This function is called by `org-babel-execute-src-block'"
             (funcall #'insert full-body)
             (funcall #'comint-send-input)
             ;(funcall #'insert org-babel-magma-eoe)
-            ))))
+            )))
+         (results-wo-eoe (s-join "\n" (butlast (split-string results "\n") 2)))
+         )
     ;; actually execute the source-code block either in a session or
     ;; possibly by dropping it to a temporary file and evaluating the
     ;; file.
@@ -141,14 +171,31 @@ This function is called by `org-babel-execute-src-block'"
     ;; other language, please preprocess any file names involved with
     ;; the function `org-babel-process-file-name'. (See the way that
     ;; function is used in the language files)
-    (s-join "\n" (butlast (split-string results "\n") 2))
+    (if (or (eq result-type 'value) (eq result-type 'eval))
+        (let* ((scan-body
+                (concat org-babel-magma--scan-output
+                        "\n"
+                       "scanOutput(\""
+                       results-wo-eoe
+                       "\");\n"
+                       (format "print \"%s\";\n" org-babel-magma-eoe)
+                       ))
+               (scan-res (nth 0 (org-babel-comint-with-output
+                                (session org-babel-magma-eoe nil nil)
+                              (funcall #'insert scan-body)
+                              (funcall #'comint-send-input))))
+               (type (car (split-string scan-res "\n"))))
+         (if (s-matches? "^.*table[ \n]?$" type)
+             (org-babel-script-escape results-wo-eoe)
+           results-wo-eoe))
+      results-wo-eoe))
     ;; (org-babel-reassemble-table
     ;;  results
     ;;  (org-babel-pick-name (cdr (assoc :colname-names params))
     ;;     		  (cdr (assoc :colnames params)))
     ;;  (org-babel-pick-name (cdr (assoc :rowname-names params))
     ;;     		  (cdr (assoc :rownames params))))
-    ))
+    )
 
 ;; This function should be used to assign any variables in params in
 ;; the context of the session environment.
@@ -173,7 +220,7 @@ Emacs-lisp table, otherwise return the results as a string."
   "If there is not a current inferior-process-buffer in SESSION then create.
 Return the initialized session."
   (let ((magma-interactive-use-comint t))
-    (magma-comint-run "org")))
+    (magma-comint-run (or session "org"))))
 
 (provide 'ob-magma)
 ;;; ob-magma.el ends here
