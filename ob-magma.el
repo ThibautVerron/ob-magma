@@ -26,22 +26,22 @@
 
 ;;; Commentary:
 
-;; This file is not intended to ever be loaded by org-babel, rather it
-;; is a template for use in adding new language support to Org-babel.
-;; Good first steps are to copy this file to a file named by the
-;; language you are adding, and then use `query-replace' to replace
-;; all strings of "template" in this file with the name of your new
-;; language.
-;;
-;; If you have questions as to any of the portions of the file defined
-;; below please look to existing language support for guidance.
-;;
-;; If you are planning on adding a language to org-babel we would ask
-;; that if possible you fill out the FSF copyright assignment form
-;; available at http://orgmode.org/request-assign-future.txt as this
-;; will make it possible to include your language support in the core
-;; of Org-mode, otherwise unassigned language support files can still
-;; be included in the contrib/ directory of the Org-mode repository.
+;; These functions provide support for magma evaluation with
+;; org-babel. Evaluation is made in a unique magma session, explicit
+;; naming of sessions is possible.
+
+;; Results type can be either 'output or 'value, in which case magma
+;; tries to determine whether the output is a table or not. If your
+;; output is a sequence and you do not wish to format it as a table,
+;; use 'output for this code block.
+
+;; Tne parameter `:eval t' causes the block to be enclosed in an
+;; `eval' form. The output value is given by the `return'
+;; statement. At the moment, nothing is done to suppress other forms
+;; of output. This evaluation method corresponds to 'value for most
+;; other modes, but due to limits with magma `eval' (for example, no
+;; side effect is possible), making it the default would be
+;; counter-intuitive.
 
 ;;; Requirements:
 
