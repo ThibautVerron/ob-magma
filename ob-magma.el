@@ -35,7 +35,7 @@
 ;; output is a sequence and you do not wish to format it as a table,
 ;; use 'output for this code block.
 
-;; Tne parameter `:magma-eval t' causes the block to be enclosed in an
+;; The parameter `:magma-eval t' causes the block to be enclosed in an
 ;; `eval' form. The output value is given by the `return'
 ;; statement. At the moment, the return statement is handled like
 ;; other forms of output (for example calls to `print'). Note that no
@@ -78,7 +78,7 @@
    ))
 
 (defconst org-babel-magma--scan-output
-  "function scanOutput (str)
+  "function ob_magma_scanOutput (str)
     try 
         res := eval str;
         if Type(res) eq SeqEnum then
@@ -175,7 +175,7 @@ This function is called by `org-babel-execute-src-block'"
         (let* ((scan-body
                 (concat org-babel-magma--scan-output
                         "\n"
-                       "scanOutput(\""
+                       "ob_magma_scanOutput(\""
                        results-wo-eoe
                        "\");\n"
                        (format "print \"%s\";\n" org-babel-magma-eoe)
