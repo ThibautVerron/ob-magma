@@ -27,21 +27,21 @@
 ;;; Commentary:
 
 ;; These functions provide support for magma evaluation with
-;; org-babel. Evaluation is made in a unique magma session, explicit
-;; naming of sessions is possible.
+;; org-babel. Evaluation is made in a unique magma session by default,
+;; explicit naming of sessions is possible.
 
 ;; Results type can be either 'output or 'value, in which case magma
 ;; tries to determine whether the output is a table or not. If your
 ;; output is a sequence and you do not wish to format it as a table,
 ;; use 'output for this code block.
 
-;; Tne parameter `:eval t' causes the block to be enclosed in an
+;; Tne parameter `:magma-eval t' causes the block to be enclosed in an
 ;; `eval' form. The output value is given by the `return'
-;; statement. At the moment, nothing is done to suppress other forms
-;; of output. This evaluation method corresponds to 'value for most
-;; other modes, but due to limits with magma `eval' (for example, no
-;; side effect is possible), making it the default would be
-;; counter-intuitive.
+;; statement. At the moment, the return statement is handled like
+;; other forms of output (for example calls to `print'). Note that no
+;; side-effect is possible in an `eval' form. This is useful if you
+;; want to run a test without changing the environment, but don't want
+;; to fire up a new session just for this test.
 
 ;;; Requirements:
 
@@ -99,7 +99,7 @@ end function;"
 (defun org-babel-expand-body:magma (body params )
   "Expand BODY according to PARAMS, return the expanded body."
   (let ((vars (mapcar #'cdr (org-babel-get-header params :var)))
-        (eval (cdr (assoc :eval params))))
+        (eval (cdr (assoc :magma-eval params))))
     (concat
      (mapconcat ;; define any variables
       (lambda (pair)
