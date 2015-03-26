@@ -103,7 +103,7 @@ end function;"
     (concat
      (mapconcat ;; define any variables
       (lambda (pair)
-        (format "%s := %S;"
+        (format "%s := eval %S;"
                 (car pair) (org-babel-magma-var-to-magma (cdr pair))))
       vars "\n")
      "\n"
@@ -206,9 +206,12 @@ This function is called by `org-babel-execute-src-block'"
 (defun org-babel-magma-var-to-magma (var)
   "Convert an elisp var into a string of magma source code
 specifying a var of the same value."
-  var
-  ;(format "%s" var)
-  )
+  (if (listp var)
+      (concat "[" (mapconcat #'org-babel-magma-var-to-magma var ", ") "]")
+    (if (equal var 'hline) ""
+      (format
+       (if (and (stringp var) (string-match "[\n\r]" var)) "\"\"%s\"\"" "%s")
+       (if (stringp var) (substring-no-properties var) var)))))
 
 (defun org-babel-magma-table-or-string (results)
   "If the results look like a table, then convert them into an
