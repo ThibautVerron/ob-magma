@@ -56,6 +56,7 @@
 (require 'ob-comint)
 (require 'ob-eval)
 (require 's)
+(require 'dash)
 
 ;; possibly require modes required for your language
 (require 'magma-mode)
@@ -67,7 +68,8 @@
 ;; optionally declare default header arguments for this language
 (defvar org-babel-default-header-args:magma '())
 
-(defvar org-babel-magma-eoe "end-of-echo")
+(defconst org-babel-magma-eoe "end-of-echo")
+(defconst org-babel-magma-prompt "[> ")
 
 (defun org-babel-magma-wrap-in-eval (body)
   "Wraps BODY in an eval form (escapes what needs to be)"
@@ -110,8 +112,6 @@ end function;"
      (if eval
          (org-babel-magma-wrap-in-eval body)
        body)
-     "\n"
-     (format "print \"%s\";" org-babel-magma-eoe)
      )))
 
 ;; This is the main function which is called to evaluate a code
@@ -146,15 +146,22 @@ This function is called by `org-babel-execute-src-block'"
          ;; either OUTPUT or VALUE which should behave as described above
          (result-type (cdr (assoc :result-type params)))
          ;; expand the body with `org-babel-expand-body:magma'
-         (full-body (org-babel-expand-body:magma
-                     body params ))
+         (full-body (concat (org-babel-expand-body:magma
+                             body params )
+                            (format "\nprint \"%s\";" org-babel-magma-eoe)))
          (results
-          (nth 0 (org-babel-comint-with-output
-              (session org-babel-magma-eoe t full-body)
-            (funcall #'insert full-body)
-            (funcall #'comint-send-input)
-            ;(funcall #'insert org-babel-magma-eoe)
-            )))
+          (s-join
+           "\n"
+           (butlast
+            ;; (-filter
+            ;;  (lambda (s) (not (s-equals? "" s)))
+             (org-babel-comint-with-output
+                (session org-babel-magma-eoe t full-body)
+              (funcall #'insert full-body)
+              (funcall #'comint-send-input)
+              ;;(funcall #'insert org-babel-magma-eoe)
+              ))))
+         ;;)
          (results-wo-eoe (s-join "\n" (butlast (split-string results "\n") 2)))
          )
     ;; actually execute the source-code block either in a session or
@@ -173,9 +180,7 @@ This function is called by `org-babel-execute-src-block'"
     ;; function is used in the language files)
     (if (or (eq result-type 'value) (eq result-type 'eval))
         (let* ((scan-body
-                (concat org-babel-magma--scan-output
-                        "\n"
-                       "ob_magma_scanOutput(\""
+                (concat "ob_magma_scanOutput(\""
                        results-wo-eoe
                        "\");\n"
                        (format "print \"%s\";\n" org-babel-magma-eoe)
@@ -210,7 +215,8 @@ specifying a var of the same value."
       (concat "[" (mapconcat #'org-babel-magma-var-to-magma var ", ") "]")
     (if (equal var 'hline) ""
       (format
-       (if (and (stringp var) (string-match "[\n\r]" var)) "\"\"%s\"\"" "%s")
+       ;;(if (and (stringp var) (string-match "[\n\r]" var)) "\"\"%s\"\"" "%s")
+       "%S"
        (if (stringp var) (substring-no-properties var) var)))))
 
 (defun org-babel-magma-table-or-string (results)
@@ -219,11 +225,25 @@ Emacs-lisp table, otherwise return the results as a string."
   (org-babel-script-escape results)
   )
 
+(defun org-babel-magma-send-initial-code (buffer)
+  (with-current-buffer buffer
+    (insert (concat
+             org-babel-magma--scan-output
+             "\n"
+             (format "SetPrompt(%S);" org-babel-magma-prompt)))
+    (comint-send-input)
+    (setq-local comint-prompt-regexp "^[^\n]*\\[> ")))
+
 (defun org-babel-magma-initiate-session (&optional session)
   "If there is not a current inferior-process-buffer in SESSION then create.
 Return the initialized session."
-  (let ((magma-interactive-use-comint t))
-    (magma-comint-run (or session "org"))))
+  (let* ((magma-interactive-use-comint t)
+         (ob-magma-session (if (string= session "none") "org" session))
+         (bufname (magma-make-buffer-name ob-magma-session)))
+    (unless (comint-check-proc bufname)
+      (magma-run ob-magma-session)
+      (org-babel-magma-send-initial-code bufname))
+    (get-buffer bufname)))
 
 (provide 'ob-magma)
 ;;; ob-magma.el ends here
