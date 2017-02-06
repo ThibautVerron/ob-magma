@@ -16,11 +16,13 @@ This package provides support for magma evaluation with org-babel. Evaluation is
 
 Results type can be either 'output or 'value, in which case magma tries to determine whether the output is a table or not. If your output is a sequence and you do not wish to format it as a table, use 'output for this code block.
 
-Tne parameter `:magma-eval t' causes the block to be enclosed in an `eval' form. The output value is given by the `return' statement. At the moment, nothing is done to suppress other forms of output. This evaluation method corresponds to 'value for most other modes, but due to limits with magma `eval' (for example, no side effect is possible), making it the default would be counter-intuitive.
+Tne parameter =:magma-eval t= causes the block to be enclosed in an =eval= form. The output value is given by the =return= statement. At the moment, nothing is done to suppress other forms of output. This evaluation method corresponds to ='value= for most other modes, but due to limits with magma =eval= (for example, no side effect is possible), making it the default would be counter-intuitive.
 
 This package is intended to be used with the =magma-mode= available [[https://github.com/ThibautVerron/magma-mode][here]], but in theory, it could work with any =magma-mode= providing a function =magma-run (&optional session)= creating a magma interactive buffer and returning it. The function may disregard the =session= argument, in which case the =:session= parameter of org will have no effect.
 
 ** Examples
+
+(Please see the [[https://raw.githubusercontent.com/ThibautVerron/ob-magma/master/README.org][readme in raw org form]] for the results of the examples)
 
 Results are handled as string by default:
 
