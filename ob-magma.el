@@ -76,8 +76,7 @@
   (concat
    "eval \""
    (s-replace "\"" "\\\"" body)
-   "\";"
-   ))
+   "\";"))
 
 (defconst org-babel-magma--scan-output
   "function ob_magma_scanOutput (str)
@@ -190,9 +189,9 @@ This function is called by `org-babel-execute-src-block'"
                               (funcall #'insert scan-body)
                               (funcall #'comint-send-input))))
                (type (car (split-string scan-res "\n"))))
-         (if (s-matches? "^.*table[ \n]?$" type)
-             (org-babel-script-escape results-wo-eoe)
-           results-wo-eoe))
+          (if (s-matches? "^.*table[ \n]?$" type)
+              (org-babel-script-escape results-wo-eoe)
+            results-wo-eoe))
       results-wo-eoe))
     ;; (org-babel-reassemble-table
     ;;  results
@@ -230,7 +229,10 @@ Emacs-lisp table, otherwise return the results as a string."
     (insert (concat
              org-babel-magma--scan-output
              "\n"
-             (format "SetPrompt(%S);" org-babel-magma-prompt)))
+             (format "SetPrompt(%S);" org-babel-magma-prompt)
+             "SetAutoColumns(false);\n"
+             "SetColumns(0);\n"
+             "SetLineEditor(false);"))
     (comint-send-input)
     (setq-local comint-prompt-regexp "^[^\n]*\\[> ")))
 
@@ -244,6 +246,14 @@ Return the initialized session."
       (magma-run ob-magma-session)
       (org-babel-magma-send-initial-code bufname))
     (get-buffer bufname)))
+
+;; We try to apply specific settings making it easier to work in the
+;; snippet buffers.
+
+
+
+
+
 
 (provide 'ob-magma)
 ;;; ob-magma.el ends here
