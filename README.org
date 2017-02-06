@@ -1,5 +1,14 @@
 # -*- ##: (visual-line-mode 1); ##: (visual-fill-column-mode 1); -*-
 
+* Warning
+
+This package is by no means ready for production use. 
+I have stopped working on it in the spring of 2015, so I may not be able to provide support. 
+But please, if you test it and encounter issues, feel free to post them here for reference.
+
+If someone is wishing to pursue developing this package, I will be glad to help to my best capacity.
+
+
 * Magma in org-babel
 ** Basics
 
@@ -9,7 +18,7 @@ Results type can be either 'output or 'value, in which case magma tries to deter
 
 Tne parameter `:magma-eval t' causes the block to be enclosed in an `eval' form. The output value is given by the `return' statement. At the moment, nothing is done to suppress other forms of output. This evaluation method corresponds to 'value for most other modes, but due to limits with magma `eval' (for example, no side effect is possible), making it the default would be counter-intuitive.
 
-This package is intended to be used with the =magma-mode= available here, but in theory, it could work with any =magma-mode= providing a function =magma-run (&optional session)= creating a magma interactive buffer and returning it. The function may disregard the =session= argument, in which case the =:session= parameter of org will have no effect.
+This package is intended to be used with the =magma-mode= available [[https://github.com/ThibautVerron/magma-mode][here]], but in theory, it could work with any =magma-mode= providing a function =magma-run (&optional session)= creating a magma interactive buffer and returning it. The function may disregard the =session= argument, in which case the =:session= parameter of org will have no effect.
 
 ** Examples
 
@@ -35,7 +44,7 @@ print([[1,2,3],[4,5,6],[7,8,9]]);
 | 4 | 5 | 6 |
 | 7 | 8 | 9 |
 
-If this is unwanred, use the =:results output= parameter.
+If this is unwanted, use the =:results output= parameter.
 
 #+begin_src magma :results output
 print([[1,2,3],[4,5,6],[7,8,9]]);

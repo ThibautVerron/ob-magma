@@ -1,10 +1,10 @@
 ;;; ob-magma.el --- org-babel functions for magma evaluation
 
-;; Copyright (C) 2015 Thibaut Verron (thibaut.verron@gmail.com)
+;; Copyright (C) 2015-2017 Thibaut Verron (thibaut.verron@gmail.com)
 
 ;; Author: Thibaut Verron
-;; Keywords: literate programming, reproducible research
-;; Homepage: http://orgmode.org
+;; Keywords: literate programming, reproducible research, magma
+;; Homepage: https://github.com/ThibautVerron/ob-magma
 ;; Version: 0.01
 
 ;;; License:
