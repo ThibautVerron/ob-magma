@@ -94,6 +94,15 @@
 end function;"
   )
 
+;; In a recent update, `org-babel-get-header' was removed from org-mode, which
+;; is something a fair number of babel plugins use. So until those plugins
+;; update, this polyfill will do:
+(defun org-babel-get-header (params key &optional others)
+  (cl-loop with fn = (if others #'not #'identity)
+           for p in params
+           if (funcall fn (eq (car p) key))
+           collect p))
+
 ;; This function expands the body of a source code block by doing
 ;; things like prepending argument definitions to the body, it should
 ;; be called by the `org-babel-execute:magma' function below.
